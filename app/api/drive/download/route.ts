@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const response = await getFileStream(session.accessToken, fileId);
+        const response = await getFileStream(fileId);
 
         // Create a new stream from the drive stream
         const stream = new ReadableStream({

@@ -55,3 +55,7 @@ npm run dev
 
 ---
 Developed by Antigravity using **Next.js** & **Google Platform**.
+
+
+<!-- 이메일: admin@example.com
+비밀번호: password123 -->

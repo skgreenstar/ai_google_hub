@@ -23,9 +23,21 @@ export function SearchBar() {
                 type="text"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border-none rounded-full bg-secondary/10 hover:bg-secondary/20 focus:bg-background focus:ring-2 focus:ring-primary transition-all duration-200 text-sm placeholder:text-muted-foreground outline-none"
+                className="block w-full pl-10 pr-10 py-2 border-none rounded-full bg-secondary/10 hover:bg-secondary/20 focus:bg-background focus:ring-2 focus:ring-primary transition-all duration-200 text-sm placeholder:text-muted-foreground outline-none"
                 placeholder="Search files, folders..."
             />
+            {value && (
+                <button
+                    onClick={() => setValue("")}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-muted-foreground hover:text-foreground"
+                >
+                    <span className="sr-only">Clear</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            )}
         </div>
     );
 }

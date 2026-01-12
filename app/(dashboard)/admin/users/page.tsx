@@ -1,92 +1,143 @@
-"use client";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { UserCheck, UserX, Users, Shield, User as UserIcon } from "lucide-react";
+import AppovalButton from "./_components/ApprovalButton";
+import UserActions from "./_components/UserActions";
+import { User } from "@prisma/client";
 
-import { InviteModal } from "@/components/features/InviteModal";
-import { User, UserTable } from "@/components/features/UserTable";
-import { Plus, Users } from "lucide-react";
-import { useState } from "react";
-
-// Mock Initial Data
-const INITIAL_USERS: User[] = [
-    { id: "1", name: "Alex Chen", email: "alex@example.com", role: "Admin", status: "Active", lastActive: "Just now", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d" },
-    { id: "2", name: "Sarah Miller", email: "sarah@example.com", role: "Editor", status: "Active", lastActive: "2 hours ago", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d" },
-    { id: "3", name: "Mike Ross", email: "mike@example.com", role: "Viewer", status: "Pending", lastActive: "-", avatar: undefined },
-];
-
-export default function UsersPage() {
-    const [users, setUsers] = useState<User[]>(INITIAL_USERS);
-    const [isInviteOpen, setIsInviteOpen] = useState(false);
-
-    const handleRoleChange = (userId: string, newRole: User["role"]) => {
-        setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
-    };
-
-    const handleInvite = (email: string, role: string) => {
-        const newUser: User = {
-            id: Date.now().toString(),
-            name: email.split("@")[0], // Simple mock name
-            email,
-            role: role as User["role"],
-            status: "Pending",
-            lastActive: "-",
-        };
-        setUsers([...users, newUser]);
-    };
-
-    const handleRemove = (userId: string) => {
-        if (confirm("Are you sure you want to remove this user?")) {
-            setUsers(users.filter(u => u.id !== userId));
-        }
+export default async function AdminUsersPage() {
+    const session = await getServerSession(authOptions);
+    if ((session?.user as any)?.role !== "ADMIN") {
+        redirect("/");
     }
 
+    const allUsers = await prisma.user.findMany({
+        orderBy: { createdAt: "desc" }
+    });
+
+    const pendingUsers = allUsers.filter((u: User) => u.status === "PENDING");
+    const activeUsers = allUsers.filter((u: User) => u.status !== "PENDING");
+
     return (
-        <div className="space-y-8 max-w-6xl mx-auto">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-8 space-y-8 max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Team Management</h1>
-                    <p className="text-muted-foreground mt-1">Manage access and roles for your workspace.</p>
-                </div>
-                <button
-                    onClick={() => setIsInviteOpen(true)}
-                    className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-medium shadow-md hover:shadow-lg transition-all active:scale-95 w-full md:w-auto justify-center"
-                >
-                    <Plus className="w-5 h-5" />
-                    <span>Invite Member</span>
-                </button>
-            </div>
-
-            {/* Stats Overview (Optional) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-card border border-border/50 p-4 rounded-xl flex items-center gap-4">
-                    <div className="p-3 bg-blue-500/10 text-blue-500 rounded-lg">
-                        <Users className="w-5 h-5" />
-                    </div>
-                    <div>
-                        <div className="text-2xl font-bold">{users.length}</div>
-                        <div className="text-xs text-muted-foreground">Total Members</div>
-                    </div>
-                </div>
-                <div className="bg-card border border-border/50 p-4 rounded-xl flex items-center gap-4">
-                    <div className="p-3 bg-green-500/10 text-green-500 rounded-lg">
-                        <Users className="w-5 h-5" />
-                    </div>
-                    <div>
-                        <div className="text-2xl font-bold">{users.filter(u => u.status === "Active").length}</div>
-                        <div className="text-xs text-muted-foreground">Active Now</div>
-                    </div>
+                    <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+                    <p className="text-muted-foreground mt-1">Manage access, roles, and user accounts.</p>
                 </div>
             </div>
 
-            <UserTable
-                users={users}
-                onRoleChange={handleRoleChange}
-                onRemoveUser={handleRemove}
-            />
+            {/* Pending Approvals Section */}
+            {pendingUsers.length > 0 && (
+                <div className="space-y-4">
+                    <h2 className="text-lg font-semibold flex items-center gap-2 text-amber-500">
+                        <UserX className="w-5 h-5" />
+                        Pending Approval ({pendingUsers.length})
+                    </h2>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {pendingUsers.map((user: User) => (
+                            <div key={user.id} className="bg-card border p-4 rounded-xl shadow-sm flex flex-col justify-between gap-4">
+                                <div>
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <p className="font-semibold text-lg">{user.name || "No Name"}</p>
+                                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                                        </div>
+                                        <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">Pending</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        Registered: {new Date(user.createdAt).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div className="flex items-center justify-end gap-2 pt-2 border-t mt-2">
+                                    <UserActions user={user} />
+                                    <AppovalButton userId={user.id} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
-            <InviteModal
-                isOpen={isInviteOpen}
-                onClose={() => setIsInviteOpen(false)}
-                onInvite={handleInvite}
-            />
+            {/* All Users Table */}
+            <div className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    All Users ({activeUsers.length})
+                </h2>
+
+                <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
+                    <table className="w-full text-sm text-left">
+                        <thead className="bg-secondary/50 border-b">
+                            <tr>
+                                <th className="px-6 py-3 font-medium text-muted-foreground">User</th>
+                                <th className="px-6 py-3 font-medium text-muted-foreground">Role</th>
+                                <th className="px-6 py-3 font-medium text-muted-foreground">Status</th>
+                                <th className="px-6 py-3 font-medium text-muted-foreground">Joined</th>
+                                <th className="px-6 py-3 font-medium text-muted-foreground text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                            {activeUsers.map((user: User) => (
+                                <tr key={user.id} className="hover:bg-accent/50 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                                {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">{user.name || "No Name"}</p>
+                                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {user.role === "ADMIN" ? (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                                <Shield className="w-3 h-3" /> Admin
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                                <UserIcon className="w-3 h-3" /> User
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {user.status === "APPROVED" ? (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                                <UserCheck className="w-3 h-3" /> Active
+                                            </span>
+                                        ) : user.status === "REJECTED" ? (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                                <UserX className="w-3 h-3" /> Suspended
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                                                Pending
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 text-muted-foreground">
+                                        {new Date(user.createdAt).toLocaleDateString()}
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <UserActions user={user} />
+                                    </td>
+                                </tr>
+                            ))}
+                            {activeUsers.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                                        No active users found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 }

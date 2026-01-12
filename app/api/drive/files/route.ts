@@ -6,8 +6,11 @@ export async function GET(request: NextRequest) {
     let session;
     try {
         session = await getAuthenticatedSession();
-    } catch {
-        console.error("API Auth Error: Session check failed");
+    } catch (error: any) {
+        console.error("API Auth Error:", error.message);
+        if (error.message === "Google Drive not connected") {
+            return NextResponse.json({ error: "Google Drive not connected", code: "DRIVE_NOT_CONNECTED" }, { status: 403 });
+        }
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -65,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     try {
         console.log(`API: Fetching files with FolderID: ${folderId}, Query: ${customQuery}, Order: ${orderBy}`);
-        const data = await listFiles(session.accessToken, folderId, 20, pageToken, customQuery, orderBy);
+        const data = await listFiles(folderId, 20, pageToken, customQuery, orderBy);
         console.log(`API: Fetched ${data.files?.length || 0} files`);
         return NextResponse.json(data);
     } catch (error: unknown) {

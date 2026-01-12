@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const data = await getDriveStats(session.accessToken);
+        const data = await getDriveStats();
         return NextResponse.json(data);
     } catch (error: unknown) {
         console.error("Drive Stats Error:", error);

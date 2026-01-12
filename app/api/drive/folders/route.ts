@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Folder name is required" }, { status: 400 });
         }
 
-        const folder = await createFolder(session.accessToken, name, parentId);
+        const folder = await createFolder(name, parentId);
         return NextResponse.json(folder);
     } catch (error: unknown) {
         console.error("Create Folder Error:", error);

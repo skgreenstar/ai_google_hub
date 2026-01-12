@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Process in parallel
-        await Promise.all(fileIds.map((id) => moveToTrash(session.accessToken, id)));
+        await Promise.all(fileIds.map((id) => moveToTrash(id)));
 
         return NextResponse.json({ success: true, count: fileIds.length });
     } catch (error: unknown) {

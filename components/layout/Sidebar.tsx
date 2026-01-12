@@ -2,7 +2,7 @@
 
 import { useAppStore } from "@/lib/store/use-app-store";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Folder, Star, Clock, Trash2, Cloud, ChevronLeft, PieChart, Users } from "lucide-react";
+import { LayoutDashboard, Folder, Star, Clock, Trash2, Cloud, ChevronLeft, PieChart, Users, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
     { icon: Trash2, label: "Trash", href: "/?filter=trash" },
     { icon: PieChart, label: "Storage & Stats", href: "/stats" },
     { icon: Users, label: "Team & Users", href: "/admin/users" },
+    { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
 export function Sidebar() {
