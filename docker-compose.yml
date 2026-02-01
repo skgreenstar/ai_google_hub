@@ -11,6 +11,3 @@ services:
       - "3000:3000"
     env_file:
       - .env.local
-    environment:
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
