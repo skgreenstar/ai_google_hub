@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
             requestBody: fileMetadata,
             media: media,
             fields: "id, name, mimeType, size",
+            supportsAllDrives: true,
         });
 
         return NextResponse.json(res.data);

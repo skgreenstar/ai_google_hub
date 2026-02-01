@@ -48,14 +48,33 @@ export const listFiles = async (
         }
     }
 
+    console.log(`API: listFiles query: "${q}", folderId: "${folderId}"`);
+
     const res = await drive.files.list({
         q,
         pageSize,
         pageToken,
         fields: "nextPageToken, files(id, name, mimeType, thumbnailLink, iconLink, size, modifiedTime, parents, capabilities, webViewLink, webContentLink)",
         orderBy: orderBy || "folder,name",
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+        corpora: 'allDrives',
     });
 
+    return res.data;
+};
+
+export const listSharedDrives = async (
+    accessToken: string,
+    pageSize: number = 20,
+    pageToken?: string
+) => {
+    const drive = getDriveClient(accessToken);
+    const res = await drive.drives.list({
+        pageSize,
+        pageToken,
+        fields: "nextPageToken, drives(id, name, backgroundImageLink, colorRgb)",
+    });
     return res.data;
 };
 
@@ -89,6 +108,7 @@ export const createFolder = async (accessToken: string, name: string, parentId?:
     const res = await drive.files.create({
         requestBody: fileMetadata,
         fields: "id, name, mimeType",
+        supportsAllDrives: true,
     });
 
     return res.data;
@@ -101,6 +121,7 @@ export const moveToTrash = async (accessToken: string, fileId: string) => {
         requestBody: {
             trashed: true,
         },
+        supportsAllDrives: true,
     });
     return res.data;
 };

@@ -11,15 +11,38 @@ import { useEffect } from "react";
 async function fetchFiles(queryKey: any): Promise<{ nextPageToken?: string; files: DriveFile[] }> {
     const [_, { searchQuery, filterType, folderId, sort }] = queryKey.queryKey;
 
+    if (filterType === 'drives' && folderId === 'root') {
+        const res = await fetch(`/api/drive/drives?pageToken=${queryKey.pageToken || ''}`);
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "Failed to fetch drives");
+        }
+        const data = await res.json();
+        // Map drives to files for compatible rendering
+        const files: DriveFile[] = (data.drives || []).map((drive: any) => ({
+            id: drive.id,
+            name: drive.name,
+            mimeType: "application/vnd.google-apps.folder", // Treat as folder
+            iconLink: drive.backgroundImageLink, // Use background as icon if available
+            capabilities: { canDownload: false, canEdit: true, canShare: true }
+        }));
+        return { nextPageToken: data.nextPageToken, files };
+    }
+
     const params = new URLSearchParams();
     if (searchQuery) params.append("search", searchQuery);
-    if (filterType && filterType !== "all") params.append("type", filterType);
+
+    // If we are in 'drives' mode but not root, we are looking at files inside a drive, so don't filter by type 'drives' (which doesn't exist for files API)
+    // We treating it as standard file listing but keeping the UI context.
+    if (filterType && filterType !== "all" && filterType !== 'drives') params.append("type", filterType);
+
     if (folderId) params.append("folderId", folderId);
     if (sort) params.append("sort", sort);
 
     const res = await fetch(`/api/drive/files?${params.toString()}`);
     if (!res.ok) {
-        throw new Error("Failed to fetch files");
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch files");
     }
     return res.json();
 }
@@ -38,7 +61,7 @@ export default function DashboardPage() {
         if (urlFilter) {
             setFilterType(urlFilter);
             setFolderId("root");
-            setFolderName("My Drive");
+            setFolderName(urlFilter === 'drives' ? "Shared Drives" : urlFilter === 'shared' ? "Shared with me" : "My Drive");
         } else if (!urlFilter && filterType !== 'all' && !searchParams.has("filter")) {
             setFilterType('all');
         }
@@ -63,7 +86,7 @@ export default function DashboardPage() {
     if (error) {
         return (
             <div className="flex h-[50vh] items-center justify-center text-red-500">
-                Error loading files. Please try again.
+                {error.message}
             </div>
         );
     }
@@ -73,8 +96,10 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold tracking-tight">
                     {searchQuery ? `Search: "${searchQuery}"` :
-                        filterType !== 'all' ? `${filterType.charAt(0).toUpperCase() + filterType.slice(1)}s` :
-                            "My Drive"}
+                        filterType === 'drives' ? "Shared Drives" :
+                            filterType === 'shared' ? "Shared with me" :
+                                filterType !== 'all' ? `${filterType.charAt(0).toUpperCase() + filterType.slice(1)}s` :
+                                    "My Drive"}
                 </h1>
             </div>
 

@@ -58,6 +58,9 @@ export async function GET(request: NextRequest) {
             case 'trash':
                 queryParts.push("trashed = true");
                 break;
+            case 'shared':
+                queryParts.push("sharedWithMe = true");
+                break;
         }
     }
 
@@ -68,11 +71,20 @@ export async function GET(request: NextRequest) {
         const data = await listFiles(session.accessToken, folderId, 20, pageToken, customQuery, orderBy);
         console.log(`API: Fetched ${data.files?.length || 0} files`);
         return NextResponse.json(data);
-    } catch (error: unknown) {
+    } catch (error: any) {
         console.error("Drive API Error Details:", error);
+
+        // Check for specific Google API errors
+        if (error.code === 403) {
+            return NextResponse.json(
+                { error: "Insufficient permissions. Please sign out and sign back in to grant Google Drive access." },
+                { status: 403 }
+            );
+        }
+
         return NextResponse.json(
-            { error: (error as Error).message || "Failed to fetch files" },
-            { status: 500 }
+            { error: error.message || "Failed to fetch files" },
+            { status: error.code || 500 }
         );
     }
 }

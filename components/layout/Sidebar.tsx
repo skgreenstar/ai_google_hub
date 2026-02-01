@@ -2,13 +2,15 @@
 
 import { useAppStore } from "@/lib/store/use-app-store";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Folder, Star, Clock, Trash2, Cloud, ChevronLeft, PieChart, Users } from "lucide-react";
+import { LayoutDashboard, Folder, Star, Clock, Trash2, Cloud, ChevronLeft, PieChart, Users, HardDrive } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const NAV_ITEMS = [
     { icon: LayoutDashboard, label: "Home", href: "/" },
     { icon: Folder, label: "My Files", href: "/?filter=all" },
+    { icon: HardDrive, label: "Shared Drives", href: "/?filter=drives" },
+    { icon: Users, label: "Shared with me", href: "/?filter=shared" },
     { icon: Star, label: "Starred", href: "/?filter=starred" },
     { icon: Clock, label: "Recent", href: "/?sort=recent" },
     { icon: Trash2, label: "Trash", href: "/?filter=trash" },
