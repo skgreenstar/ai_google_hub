@@ -3,17 +3,17 @@ import { getAuthenticatedSession } from "@/lib/api-utils";
 import { getFileStream } from "@/lib/services/drive/private-drive.service";
 import { Readable } from "node:stream";
 
-const getHeaderValue = (headers: unknown, key: string): string | undefined => {
+const getHeaderValue = (headers: any, key: string): string | undefined => {
     if (!headers) return undefined;
     const normalized = key.toLowerCase();
 
-    if (typeof headers === "object" && "get" in headers && typeof (headers as { get: unknown }).get === "function") {
-        return (headers as { get: (name: string) => string | null }).get(key) ?? (headers as { get: (name: string) => string | null }).get(normalized);
+    if (typeof headers.get === "function") {
+        return headers.get(key) || headers.get(normalized) || undefined;
     }
 
-    const map = headers as Record<string, string>;
-    return map[key] || map[normalized];
+    return headers[key] || headers[normalized];
 };
+
 
 const safeFileName = (value: string) => value.replace(/["\r\n]/g, "_");
 
@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
 
     try {
         const response = await getFileStream(session.accessToken, fileId);
-        const nodeStream = response.data as unknown as NodeJS.ReadableStream;
-        const webStream = Readable.toWeb(nodeStream);
+        const nodeStream = response.data as any;
+        const webStream = Readable.toWeb(nodeStream) as any;
         const contentType = getHeaderValue(response.headers, "content-type") || "application/octet-stream";
         const safeName = safeFileName(fileName);
         const dispositionType = isInline ? "inline" : "attachment";
@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
             },
         });
     } catch (error: unknown) {
+
         console.error("Download Error:", error);
         return NextResponse.json(
             { error: (error as Error).message || "Failed to download file" },

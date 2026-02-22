@@ -1,18 +1,9 @@
 import { NextAuthOptions } from "next-auth";
+import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
 import { isAdminEmail } from "@/lib/security/admin";
 
-type AppRole = "Admin" | "Editor" | "Viewer";
-
-interface AppSessionToken {
-    accessToken?: string;
-    refreshToken?: string;
-    expiresAt?: number;
-    role?: AppRole;
-    error?: string;
-}
-
-const refreshAccessToken = async (token: AppSessionToken): Promise<AppSessionToken> => {
+const refreshAccessToken = async (token: JWT): Promise<JWT> => {
     if (!token.refreshToken) {
         return {
             ...token,
@@ -24,7 +15,7 @@ const refreshAccessToken = async (token: AppSessionToken): Promise<AppSessionTok
         const params = new URLSearchParams();
         params.set("client_id", process.env.GOOGLE_CLIENT_ID || "");
         params.set("client_secret", process.env.GOOGLE_CLIENT_SECRET || "");
-        params.set("refresh_token", token.refreshToken);
+        params.set("refresh_token", token.refreshToken as string);
         params.set("grant_type", "refresh_token");
 
         const response = await fetch("https://oauth2.googleapis.com/token", {
@@ -80,33 +71,29 @@ export const authOptions: NextAuthOptions = {
     },
     callbacks: {
         async jwt({ token, account }) {
-            const typedToken = token as AppSessionToken & typeof token;
-
             if (account) {
-                typedToken.accessToken = account.access_token;
-                typedToken.refreshToken = account.refresh_token;
-                typedToken.expiresAt = account.expires_at;
-                typedToken.role = isAdminEmail(typedToken.email) ? "Admin" : "Viewer";
+                token.accessToken = account.access_token;
+                token.refreshToken = account.refresh_token;
+                token.expiresAt = account.expires_at;
+                token.role = isAdminEmail(token.email) ? "Admin" : "Viewer";
             }
 
-            if (typedToken.expiresAt && typedToken.expiresAt * 1000 <= Date.now() + 60 * 1000) {
-                const refreshedToken = await refreshAccessToken(typedToken);
-                return refreshedToken;
+            if (token.expiresAt && token.expiresAt * 1000 <= Date.now() + 60 * 1000) {
+                return refreshAccessToken(token);
             }
 
-            if (!typedToken.role && typedToken.email) {
-                typedToken.role = isAdminEmail(typedToken.email) ? "Admin" : "Viewer";
+            if (!token.role && token.email) {
+                token.role = isAdminEmail(token.email) ? "Admin" : "Viewer";
             }
 
-            return typedToken;
+            return token;
         },
         async session({ session, token }) {
-            const typedToken = token as AppSessionToken & typeof token;
-            if (typedToken) {
-                session.accessToken = typedToken.accessToken;
-                session.accessTokenExpiresAt = typedToken.expiresAt;
-                session.user.role = typedToken.role;
-                session.error = typedToken.error;
+            if (token) {
+                session.accessToken = token.accessToken as string;
+                session.accessTokenExpiresAt = token.expiresAt as number;
+                session.user.role = token.role as "Admin" | "Editor" | "Viewer";
+                session.error = token.error as "RefreshAccessTokenError";
             }
             return session;
         },
@@ -114,3 +101,4 @@ export const authOptions: NextAuthOptions = {
     secret: process.env.NEXTAUTH_SECRET,
     debug: process.env.NODE_ENV !== "production",
 };
+

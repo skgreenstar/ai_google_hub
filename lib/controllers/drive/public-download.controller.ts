@@ -2,16 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPublicFileStream } from "@/lib/services/drive/public-drive.service";
 import { Readable } from "node:stream";
 
-const getHeaderValue = (headers: unknown, key: string): string | undefined => {
+const getHeaderValue = (headers: any, key: string): string | undefined => {
     if (!headers) return undefined;
     const normalized = key.toLowerCase();
 
-    if (typeof headers === "object" && "get" in headers && typeof (headers as { get: unknown }).get === "function") {
-        return (headers as { get: (name: string) => string | null }).get(key) ?? (headers as { get: (name: string) => string | null }).get(normalized);
+    if (typeof headers.get === "function") {
+        return headers.get(key) || headers.get(normalized) || undefined;
     }
 
-    const map = headers as Record<string, string>;
-    return map[key] || map[normalized];
+    return headers[key] || headers[normalized];
 };
 
 const safeFileName = (value: string) => value.replace(/["\r\n]/g, "_");
@@ -28,8 +27,8 @@ export async function GET(request: NextRequest) {
 
     try {
         const response = await getPublicFileStream(fileId);
-        const nodeStream = response.data as unknown as NodeJS.ReadableStream;
-        const webStream = Readable.toWeb(nodeStream);
+        const nodeStream = response.data as any;
+        const webStream = Readable.toWeb(nodeStream) as any;
         const contentType = getHeaderValue(response.headers, "content-type") || "application/octet-stream";
         const safeName = safeFileName(fileName || "download");
         const headers = new Headers();
@@ -40,6 +39,7 @@ export async function GET(request: NextRequest) {
 
         return new NextResponse(webStream, { status: 200, headers });
     } catch (error: any) {
+
         console.error("Public Download Error:", error);
         if (error.message?.includes("Missing GOOGLE_SERVICE_ACCOUNT_EMAIL")) {
             return NextResponse.json(

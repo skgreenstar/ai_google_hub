@@ -65,8 +65,8 @@ export async function GET(request: NextRequest) {
         if (type === "drives" && folderId === "root") {
             const data = await listSharedDrives(session.accessToken, 20, pageToken);
             const files: DriveFile[] = (data.drives || []).map((drive) => ({
-                id: drive.id,
-                name: drive.name,
+                id: drive.id || "",
+                name: drive.name || "Untitled Drive",
                 mimeType: "application/vnd.google-apps.folder",
                 iconLink: (drive as any).backgroundImageLink,
                 capabilities: { canDownload: false, canEdit: true, canShare: true },
@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
 
             return NextResponse.json({ ...data, files });
         }
+
 
         const data = await listFiles(session.accessToken, folderId, 20, pageToken, customQuery, orderBy);
         return NextResponse.json(data);
