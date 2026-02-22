@@ -193,7 +193,7 @@ const migrateSchema = async (db: DatabaseSync) => {
 };
 
 const seedDefaults = async (db: DatabaseSync) => {
-    const hasUsers = db.prepare("SELECT COUNT(*) as count FROM admin_users").get() as { count: number } | undefined;
+    const hasUsers = db.prepare("SELECT COUNT(*) as count FROM admin_users").get() as any as { count: number } | undefined;
     if (hasUsers && hasUsers.count > 0) return;
 
     const nowValue = now();
@@ -294,7 +294,7 @@ const withDb = async <T>(fn: (db: DatabaseSync) => T): Promise<T> => {
 
 export const getUsers = async (context: AuditContext) => {
     return withDb((db) => {
-        const rows = db.prepare("SELECT * FROM admin_users ORDER BY created_at DESC").all() as DbSchemaRecord[];
+        const rows = db.prepare("SELECT * FROM admin_users ORDER BY created_at DESC").all() as any as DbSchemaRecord[];
         return rows.map(toAdminUser);
     }).then(async (users) => {
         void logAdminAction({
@@ -313,7 +313,7 @@ export const getUsers = async (context: AuditContext) => {
 export const createUser = async (input: Omit<AdminUser, "id" | "lastActive">, context: AuditContext) => {
     return withDb((db) => {
         const existing = db.prepare("SELECT id FROM admin_users WHERE lower(email) = lower(?)")
-            .get(input.email) as { id: string } | undefined;
+            .get(input.email) as any as { id: string } | undefined;
 
         if (existing) {
             throw new Error("User already exists");
@@ -370,7 +370,7 @@ export const createUser = async (input: Omit<AdminUser, "id" | "lastActive">, co
 export const updateUserRole = async (id: string, role: UserRole, context: AuditContext) => {
     return withDb((db) => {
         const nowValue = now();
-        const target = db.prepare("SELECT email FROM admin_users WHERE id = ?").get(id) as { email: string } | undefined;
+        const target = db.prepare("SELECT email FROM admin_users WHERE id = ?").get(id) as any as { email: string } | undefined;
         if (!target) {
             throw new Error("User not found");
         }
@@ -378,7 +378,7 @@ export const updateUserRole = async (id: string, role: UserRole, context: AuditC
         db.prepare("UPDATE admin_users SET role = ?, updated_at = ?, updated_by = ? WHERE id = ?")
             .run(role, nowValue, context.actorEmail, id);
 
-        const row = db.prepare("SELECT * FROM admin_users WHERE id = ?").get(id) as DbSchemaRecord;
+        const row = db.prepare("SELECT * FROM admin_users WHERE id = ?").get(id) as any as DbSchemaRecord;
         const updated = toAdminUser(row);
 
         void logAdminAction({
@@ -400,7 +400,7 @@ export const updateUserRole = async (id: string, role: UserRole, context: AuditC
 
 export const deleteUser = async (id: string, context: AuditContext) => {
     return withDb((db) => {
-        const target = db.prepare("SELECT email FROM admin_users WHERE id = ?").get(id) as { email: string } | undefined;
+        const target = db.prepare("SELECT email FROM admin_users WHERE id = ?").get(id) as any as { email: string } | undefined;
         if (!target) {
             throw new Error("User not found");
         }
@@ -438,7 +438,7 @@ export const getAuditLogs = async (
             ${query.whereClause}
             ORDER BY created_at DESC
             LIMIT ? OFFSET ?
-        `).all(...query.params, limit, offset) as DbAuditRecord[];
+        `).all(...query.params, limit, offset) as any as DbAuditRecord[];
 
         return rows.map(toAuditRecord);
     }).then(async (logs) => {
@@ -465,7 +465,7 @@ export const getAuditLogCount = async (filters: AuditLogFilter = {}) => {
             SELECT COUNT(*) as count
             FROM admin_audit_logs
             ${query.whereClause}
-        `).get(...query.params) as { count: number } | undefined;
+        `).get(...query.params) as any as { count: number } | undefined;
 
         return row?.count ?? 0;
     });
