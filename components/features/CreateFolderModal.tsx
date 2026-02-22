@@ -4,15 +4,22 @@ import { useAppStore } from "@/lib/store/use-app-store";
 import { X, FolderPlus, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 
 export function CreateFolderModal() {
     const { createFolderModalOpen, setCreateFolderModalOpen, folderId } = useAppStore();
     const [name, setName] = useState("");
     const [isCreating, setIsCreating] = useState(false);
     const queryClient = useQueryClient();
+    const { status } = useSession();
+    const isAuthenticated = status === "authenticated";
 
     const handleCreate = async () => {
         if (!name.trim()) return;
+        if (!isAuthenticated) {
+            alert("로그인 후 폴더를 생성할 수 있습니다.");
+            return;
+        }
 
         try {
             setIsCreating(true);

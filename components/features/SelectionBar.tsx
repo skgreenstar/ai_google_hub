@@ -4,13 +4,16 @@ import { useAppStore } from "@/lib/store/use-app-store";
 import { X, Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 
 export function SelectionBar() {
     const { selectedFileIds, clearSelection } = useAppStore();
     const [isDeleting, setIsDeleting] = useState(false);
     const queryClient = useQueryClient();
+    const { status } = useSession();
+    const isAuthenticated = status === "authenticated";
 
-    if (selectedFileIds.length === 0) return null;
+    if (!isAuthenticated || selectedFileIds.length === 0) return null;
 
     const handleDelete = async () => {
         if (!confirm(`Are you sure you want to delete ${selectedFileIds.length} items?`)) return;

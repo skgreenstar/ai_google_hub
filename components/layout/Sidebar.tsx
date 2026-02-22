@@ -2,9 +2,10 @@
 
 import { useAppStore } from "@/lib/store/use-app-store";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Folder, Star, Clock, Trash2, Cloud, ChevronLeft, PieChart, Users, HardDrive } from "lucide-react";
+import { LayoutDashboard, Folder, Star, Clock, Trash2, Cloud, ChevronLeft, PieChart, Users, HardDrive, Globe } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 const NAV_ITEMS = [
     { icon: LayoutDashboard, label: "Home", href: "/" },
@@ -15,13 +16,19 @@ const NAV_ITEMS = [
     { icon: Clock, label: "Recent", href: "/?sort=recent" },
     { icon: Trash2, label: "Trash", href: "/?filter=trash" },
     { icon: PieChart, label: "Storage & Stats", href: "/stats" },
+    { icon: Globe, label: "Public Drive", href: "/public" },
     { icon: Users, label: "Team & Users", href: "/admin/users" },
 ];
 
 export function Sidebar() {
     const { sidebarOpen, toggleSidebar } = useAppStore();
+    const { status } = useSession();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const isAuthenticated = status === "authenticated";
+    const visibleNavItems = isAuthenticated
+        ? NAV_ITEMS
+        : NAV_ITEMS.filter((item) => item.href === "/");
 
     return (
         <aside
@@ -42,7 +49,7 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 p-4 space-y-2">
-                {NAV_ITEMS.map((item) => {
+                {visibleNavItems.map((item) => {
                     // Logic to determine active state
                     let isActive = false;
                     if (item.href === "/") {

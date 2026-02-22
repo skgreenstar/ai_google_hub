@@ -4,6 +4,7 @@ import { useAppStore } from "@/lib/store/use-app-store";
 import { X, Upload, FileIcon, Loader2, Folder as FolderIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 
 export function UploadModal() {
     const { uploadModalOpen, setUploadModalOpen, folderId, folderName } = useAppStore();
@@ -12,6 +13,8 @@ export function UploadModal() {
     const [description, setDescription] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     const queryClient = useQueryClient();
+    const { status } = useSession();
+    const isPublicUpload = status !== "authenticated";
 
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -49,7 +52,9 @@ export function UploadModal() {
             formData.append("metadata", JSON.stringify({ description }));
             formData.append("parentId", folderId); // Use current folder ID
 
-            const res = await fetch("/api/drive/upload", {
+            const endpoint = isPublicUpload ? "/api/drive/public/upload" : "/api/drive/upload";
+
+            const res = await fetch(endpoint, {
                 method: "POST",
                 body: formData,
             });

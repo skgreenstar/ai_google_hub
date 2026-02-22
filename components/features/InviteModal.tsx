@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 interface InviteModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onInvite: (email: string, role: string) => void;
+    onInvite: (email: string, role: string) => Promise<void> | void;
 }
 
 export function InviteModal({ isOpen, onClose, onInvite }: InviteModalProps) {
@@ -26,18 +26,20 @@ export function InviteModal({ isOpen, onClose, onInvite }: InviteModalProps) {
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return;
 
         setIsSending(true);
-        // Simulate API delay
-        setTimeout(() => {
-            onInvite(email, role);
-            setIsSending(false);
+        try {
+            await onInvite(email, role);
             setEmail("");
             onClose();
-        }, 1000);
+        } catch {
+            alert("Failed to send invite. Please try again.");
+        } finally {
+            setIsSending(false);
+        }
     };
 
     return (

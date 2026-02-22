@@ -5,8 +5,6 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { useAppStore } from "@/lib/store/use-app-store";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { FilePreviewModal } from "@/components/features/FilePreviewModal";
 import { UploadModal } from "@/components/features/UploadModal";
 
@@ -15,22 +13,11 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { data: session, status } = useSession();
-    const router = useRouter();
+    const { status } = useSession();
     const { sidebarOpen } = useAppStore();
-
-    useEffect(() => {
-        if (status === "unauthenticated") {
-            router.push("/login");
-        }
-    }, [status, router]);
 
     if (status === "loading") {
         return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-    }
-
-    if (!session) {
-        return null;
     }
 
     return (

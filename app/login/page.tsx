@@ -8,6 +8,21 @@ import { Suspense } from "react";
 function LoginForm() {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get("callbackUrl") || "/";
+    const error = searchParams.get("error");
+
+    const errorMessage = (() => {
+        if (!error) return null;
+        if (error === "OAuthCallback") {
+            return "Google 로그인 응답 처리 중 오류가 발생했습니다. 팝업/브라우저를 새로고침 후 다시 시도해 주세요.";
+        }
+        if (error === "AccessDenied") {
+            return "Google 계정 접근이 거부되었습니다. 계정 동의를 허용했는지 확인해 주세요.";
+        }
+        if (error === "Configuration") {
+            return "서버 인증 설정이 올바르지 않습니다. NEXTAUTH_URL과 Google OAuth Redirect URI를 확인해 주세요.";
+        }
+        return "로그인 처리 중 문제가 발생했습니다.";
+    })();
 
     return (
         <div className="w-full max-w-md space-y-8">
@@ -23,6 +38,12 @@ function LoginForm() {
                         Sign in to your account to continue
                     </p>
                 </div>
+
+                {errorMessage && (
+                    <div className="rounded-md border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">
+                        {errorMessage}
+                    </div>
+                )}
 
                 <button
                     onClick={() => signIn("google", { callbackUrl })}

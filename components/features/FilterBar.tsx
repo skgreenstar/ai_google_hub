@@ -31,7 +31,7 @@ export function FilterBar() {
     };
 
     return (
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+        <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-2 px-1">
                 <Filter className="w-4 h-4 text-muted-foreground mr-1" />
                 <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Filters:</span>

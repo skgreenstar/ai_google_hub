@@ -5,10 +5,12 @@ import { FilterBar } from "@/components/features/FilterBar";
 import { useSession, signOut } from "next-auth/react";
 import { useAppStore } from "@/lib/store/use-app-store";
 import { Bell, Plus, FolderPlus } from "lucide-react";
+import Link from "next/link";
 
 export function Header() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const { setUploadModalOpen, setCreateFolderModalOpen } = useAppStore();
+    const isAuthenticated = status === "authenticated";
 
     return (
         <header className="h-auto md:h-28 py-4 border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-40 px-6 flex flex-col justify-center gap-4 transition-all duration-300">
@@ -25,13 +27,15 @@ export function Header() {
                     </button>
 
                     {/* New Folder Button */}
-                    <button
-                        onClick={() => setCreateFolderModalOpen(true)}
-                        className="flex items-center gap-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-full font-medium hover:bg-secondary/80 transition-all active:scale-95"
-                    >
-                        <FolderPlus className="w-4 h-4" />
-                        <span className="hidden sm:inline">New Folder</span>
-                    </button>
+                    {isAuthenticated && (
+                        <button
+                            onClick={() => setCreateFolderModalOpen(true)}
+                            className="flex items-center gap-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-full font-medium hover:bg-secondary/80 transition-all active:scale-95"
+                        >
+                            <FolderPlus className="w-4 h-4" />
+                            <span className="hidden sm:inline">New Folder</span>
+                        </button>
+                    )}
 
                     {/* New Upload Button */}
                     <button
@@ -42,7 +46,7 @@ export function Header() {
                         <span>Upload</span>
                     </button>
 
-                    {session?.user?.image && (
+                    {isAuthenticated && session?.user?.image ? (
                         <div className="relative group">
                             <img
                                 src={session.user.image}
@@ -61,10 +65,17 @@ export function Header() {
                                 </button>
                             </div>
                         </div>
+                    ) : (
+                        <Link
+                            href="/login"
+                            className="text-sm font-medium px-3 py-2 rounded-full border border-border/60 text-foreground hover:bg-secondary/10 transition-colors"
+                        >
+                            Log in
+                        </Link>
                     )}
                 </div>
             </div>
-            <div className="w-full max-w-xl animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="w-full animate-in fade-in slide-in-from-top-2 duration-300">
                 <FilterBar />
             </div>
         </header>

@@ -21,7 +21,7 @@ export const withAuth = (action: AuthenticatedAction) => {
 
 export async function getAuthenticatedSession(): Promise<Session & { accessToken: string }> {
     const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
+    if (!session?.accessToken || (session as Session & { error?: string }).error) {
         throw new Error("Unauthorized");
     }
     return session as Session & { accessToken: string };
